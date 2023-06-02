@@ -9,36 +9,43 @@ import (
 	"github.com/dominikbraun/graph/draw"
 )
 
-// function to draw the DAG
-func DrawDAG(fileName string, ledgerMap map[int]*Transaction, outputLabelsMapConsumerIDs map[string]map[int]int, threshold float64, idGenesis int) {
+// DrawDAG generates a Directed Acyclic Graph (DAG) visualization in Graphviz DOT format.
+// It takes the following parameters:
+// - filename: The name of the output file without the extension.
+// - transactions: A map of transaction IDs to Transaction objects.
+// - outputConsumers: A map that contains UTXO and a map of all transaction IDs consuming this UTXO.
+// - threshold: A threshold value used for determining the color of vertices in the graph.
+// - genesisID: The ID of the genesis transaction.
+func DrawDAG(filename string, transactions map[int]*Transaction, outputConsumers map[string]map[int]int, threshold float64, genesisID int) {
 	g := graph.New(graph.IntHash, graph.Directed())
 
 	allVisited := make([]int, 0)
-	// create exploredSearchLedger of size len(ledgerMap)
 
-	exploredSearchLedger := make(map[int]int, len(ledgerMap))
-	//Missing: Traverse down till conflicts and mark the past conflicts BFS
-	Stack := make([]int, 0)
-	Stack = append(Stack, idGenesis)
+	// Create exploredSearchLedger of size len(transactions)
+	exploredSearchLedger := make(map[int]int, len(transactions))
 
-	strID := "TX: " + strconv.Itoa(idGenesis)
-	if ledgerMap[idGenesis].IsConflict {
-		_ = g.AddVertex(idGenesis, graph.VertexAttribute("shape", "polygon"), graph.VertexAttribute("label", strID), graph.VertexAttribute("color", "blue"))
+	// Missing: Traverse down till conflicts and mark the past conflicts BFS
+	stack := make([]int, 0)
+	stack = append(stack, genesisID)
+
+	strGenesisID := "TX: " + strconv.Itoa(genesisID)
+	if transactions[genesisID].IsConflict {
+		_ = g.AddVertex(genesisID, graph.VertexAttribute("shape", "polygon"), graph.VertexAttribute("label", strGenesisID), graph.VertexAttribute("color", "blue"))
 	}
 
-	for len(Stack) > 0 {
-		curVertex := Stack[len(Stack)-1]
+	for len(stack) > 0 {
+		curVertex := stack[len(stack)-1]
 		allVisited = append(allVisited, curVertex)
-		Stack = Stack[:len(Stack)-1]
-		if exploredSearchLedger[curVertex] != idGenesis {
-			exploredSearchLedger[curVertex] = idGenesis
+		stack = stack[:len(stack)-1]
+		if exploredSearchLedger[curVertex] != genesisID {
+			exploredSearchLedger[curVertex] = genesisID
 			keys := make([]string, 0)
-			for k, _ := range ledgerMap[curVertex].OutputLabels {
+			for k := range transactions[curVertex].OutputLabels {
 				keys = append(keys, k)
 			}
 			sort.Strings(keys)
 			for _, out := range keys {
-				if len(outputLabelsMapConsumerIDs[out]) >= 1 {
+				if len(outputConsumers[out]) >= 1 {
 					curNodeInt := 0
 					curFactor := 1
 					for p := 1; p < len(out); p++ {
@@ -48,42 +55,42 @@ func DrawDAG(fileName string, ledgerMap map[int]*Transaction, outputLabelsMapCon
 					}
 					_ = g.AddVertex(curNodeInt, graph.VertexAttribute("label", out[0:5]))
 					_ = g.AddEdge(curVertex, curNodeInt)
-					keys2 := make([]int, 0)
-					for k2, _ := range outputLabelsMapConsumerIDs[out] {
-						keys2 = append(keys2, k2)
+					consumerIDs := make([]int, 0)
+					for k2 := range outputConsumers[out] {
+						consumerIDs = append(consumerIDs, k2)
 					}
-					sort.Ints(keys2)
-					for _, cons := range keys2 {
-						strCONS := "TX: " + strconv.Itoa(cons)
-						if ledgerMap[cons].IsConflict {
-							_ = g.AddVertex(cons, graph.VertexAttribute("shape", "polygon"), graph.VertexAttribute("label", strCONS), graph.VertexAttribute("color", "red"))
+					sort.Ints(consumerIDs)
+					for _, consumer := range consumerIDs {
+						strConsumer := "TX: " + strconv.Itoa(consumer)
+						if transactions[consumer].IsConflict {
+							_ = g.AddVertex(consumer, graph.VertexAttribute("shape", "polygon"), graph.VertexAttribute("label", strConsumer), graph.VertexAttribute("color", "red"))
 						} else {
-							if ledgerMap[cons].Weight > threshold {
-								_ = g.AddVertex(cons, graph.VertexAttribute("shape", "polygon"), graph.VertexAttribute("label", strCONS), graph.VertexAttribute("color", "blue"))
+							if transactions[consumer].Weight > threshold {
+								_ = g.AddVertex(consumer, graph.VertexAttribute("shape", "polygon"), graph.VertexAttribute("label", strConsumer), graph.VertexAttribute("color", "blue"))
 							} else {
-								_ = g.AddVertex(cons, graph.VertexAttribute("shape", "polygon"), graph.VertexAttribute("label", strCONS))
+								_ = g.AddVertex(consumer, graph.VertexAttribute("shape", "polygon"), graph.VertexAttribute("label", strConsumer))
 							}
 						}
-						_ = g.AddEdge(curNodeInt, cons)
+						_ = g.AddEdge(curNodeInt, consumer)
 					}
 				}
 			}
-			keys3 := make([]int, 0)
-			for k, _ := range ledgerMap[curVertex].Children {
-				keys3 = append(keys3, k)
+			childIDs := make([]int, 0)
+			for k := range transactions[curVertex].Children {
+				childIDs = append(childIDs, k)
 			}
-			sort.Ints(keys3)
-			for _, nextVertex := range keys3 {
-				Stack = append(Stack, nextVertex)
+			sort.Ints(childIDs)
+			for _, nextVertex := range childIDs {
+				stack = append(stack, nextVertex)
 			}
 		}
 	}
 
-	// clean exploredSearchLedger here
+	// Clean exploredSearchLedger here
 	for t := range allVisited {
 		exploredSearchLedger[allVisited[t]] = 0
 	}
 
-	file, _ := os.Create("./" + fileName + ".gv")
+	file, _ := os.Create("./" + filename + ".gv")
 	_ = draw.DOT(g, file)
 }

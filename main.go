@@ -1120,8 +1120,8 @@ func main() {
 	ifUniform = 1
 	getInputOutputDistribution()
 	// create ledgerMap and draw the DAG
-	EverGrowingLedger(0.2, 50, false)
-	DrawDAG("test", ledgerMap, outputLabelsMapConsumerIDs, threshold, idGenesis)
+	// EverGrowingLedger(0.2, 50, false)
+	// DrawDAG("test2", ledgerMap, outputLabelsMapConsumerIDs, threshold, idGenesis)
 
 	/*
 		probabilityConflict := []float64{0.05, 0.05, 0.1, 0.5}

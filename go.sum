@@ -1,0 +1,6 @@
+github.com/dominikbraun/graph v0.22.0 h1:2YGQsN8+g1y/c+i7HPEbMqfW3W84sTpQsuiFpBwJWzY=
+github.com/dominikbraun/graph v0.22.0/go.mod h1:yOjYyogZLY1LSG9E33JWZJiq5k83Qy2C6POAuiViluc=
+github.com/woodywood117/stopwatch v0.1.1 h1:FoaM0zEplDH/XLPMbNIPt2q9WAXv+gsBe8Mh+zaCORw=
+github.com/woodywood117/stopwatch v0.1.1/go.mod h1:Bcjb+O699MD5Qw64drKsIpdwiJkoO1/TRlQsk1Vtbqg=
+golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1 h1:k/i9J1pBpvlfR+9QsetwPyERsqu1GIbi967PQMq3Ivc=
+golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1/go.mod h1:V1LtkGg67GoY2N1AnLN78QLrzxkLyJw7RJb1gzOOz9w=

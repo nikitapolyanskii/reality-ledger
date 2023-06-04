@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 func TraverseAndCheck(st string) {
 	Stack := make([]int, 0)
 	Stack = append(Stack, idGenesis)

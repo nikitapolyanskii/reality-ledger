@@ -154,3 +154,61 @@ func GetReality() map[int]int {
 
 	return reality
 }
+
+func assignWeightsAfterReality() {
+	allVisited := make([]int, 0)
+	//Missing: Traverse down till conflicts and mark the past conflicts BFS
+	Stack := make([]int, 0)
+	Stack = append(Stack, idGenesis)
+	outputLabelsToDelete := map[string]int{}
+	for len(Stack) > 0 {
+		curVertex := Stack[len(Stack)-1]
+		allVisited = append(allVisited, curVertex)
+		Stack = Stack[:len(Stack)-1]
+		if exploredSearchLedger[curVertex] != idGenesis {
+			exploredSearchLedger[curVertex] = idGenesis
+			ledgerMap[curVertex].Weight = 1
+			//delete all inputs from potential spentOutputs
+			for curLabel := range ledgerMap[curVertex].InputLabels {
+				outputLabelsToDelete[curLabel] = curVertex
+			}
+
+			for nextVertex := range ledgerMap[curVertex].Children {
+				if ledgerMap[nextVertex].Weight > -0.5 {
+					pastFine := true
+					for curPar := range ledgerMap[nextVertex].ParentsConflicts {
+						if ledgerMap[curPar].Weight < -0.5 {
+							pastFine = false
+						}
+					}
+					if pastFine {
+						Stack = append(Stack, nextVertex)
+					}
+				}
+			}
+		}
+	}
+	numDel := 0
+	for curLabel := range outputLabelsToDelete {
+		numDel = numDel + 1
+		confirmedSpentlabelsSlice = append(confirmedSpentlabelsSlice, CreateOutputID(outputLabelsToDelete[curLabel], curLabel))
+		curIndex := outputLabelsMapOwnerID[curLabel].indexSpentSlice
+		if curIndex != -1 {
+			unconfirmedSpentLabelsSlice[curIndex] = unconfirmedSpentLabelsSlice[len(unconfirmedSpentLabelsSlice)-1]
+			movedLabel := unconfirmedSpentLabelsSlice[curIndex].OutputLabel
+			unconfirmedSpentLabelsSlice = unconfirmedSpentLabelsSlice[:len(unconfirmedSpentLabelsSlice)-1]
+			if curIndex < len(unconfirmedSpentLabelsSlice) {
+				outputLabelsMapOwnerID[movedLabel].indexSpentSlice = curIndex
+			} else {
+				outputLabelsMapOwnerID[movedLabel].indexSpentSlice = -1
+			}
+			outputLabelsMapOwnerID[curLabel].indexSpentSlice = -1
+		}
+	}
+	//unconfirmedSpentLabelsSlice = unconfirmedSpentLabelsSlice[:len(unconfirmedSpentLabelsSlice)-numDel]
+
+	// clean exploredIdBft
+	for t := range allVisited {
+		exploredSearchLedger[allVisited[t]] = 0
+	}
+}

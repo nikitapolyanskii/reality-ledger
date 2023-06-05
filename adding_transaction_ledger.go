@@ -47,7 +47,7 @@ type DistribEntry2D struct {
 	outputs int
 }
 
-func getInputOutputDistribution() {
+func GetInputOutputDistribution() {
 
 	cumWeight := 0.0
 	curWeight := 1.0 / float64(numInputsMax*numOutputsMax)
@@ -98,7 +98,7 @@ func CreateGenesis(numOutputs int) Transaction {
 
 // CreateTransaction creates a new Transaction with the specified ID, input labels, and output labels.
 // It updates relevant data structures and returns the created Transaction.
-func CreateTransaction(id int, inputLabels map[string]int, outputLabels map[string]int) Transaction {
+func AddTransactionLedger(id int, inputLabels map[string]int, outputLabels map[string]int) Transaction {
 	// Update some data structures
 
 	// Update outputLabelsSliceOwnerID, unspentLabelsSlice, and outputLabelsMapOwnerID
@@ -160,6 +160,7 @@ func CreateTransaction(id int, inputLabels map[string]int, outputLabels map[stri
 			outputLabelsMapOwnerID[addLabel].indexSpentSlice = len(unconfirmedSpentLabelsSlice) - 1
 		}
 	}
+	unspentLabelsSlice = unspentLabelsSlice[:len(unspentLabelsSlice)-totalDeleteUnspent]
 
 	// Update conflicts and dependencies
 	isConflict := false

@@ -7,30 +7,31 @@ type conflictForSort struct {
 	weight   float64
 }
 
-// LeaveMaximalElements removes non-maximal elements from the NewElements map based on conflict resolution.
-// It takes the following parameters:
-// - NewElements: A map containing the elements to be checked and modified.
-// - curParent: The ID of the current parent transaction.
-// - stack: A map representing the conflict stack.
-func LeaveMaximalElements(NewElements map[int]int, curParent int, stack map[int]conflictForSort) {
+type StringInt struct {
+	ID          int
+	OutputLabel string
+}
+
+func CreateOutputID(id int, outputLabel string) StringInt {
+	return StringInt{
+		ID:          id,
+		OutputLabel: outputLabel,
+	}
+}
+
+func LeaveMaximalElements(NewElements map[int]int, curParent int, Stack map[int]conflictForSort) {
 	for id := range NewElements {
 		allVisited := make([]int, 0)
 		localStack := make([]int, 0)
 		localStack = append(localStack, id)
 		deleteTrue := false
-
-		// Traverse down the conflict chain
 		for len(localStack) > 0 {
 			curVertex := localStack[len(localStack)-1]
 			allVisited = append(allVisited, curVertex)
 			localStack = localStack[:len(localStack)-1]
-
-			// Check if the current vertex is explored or conflicts with stack
 			if exploredSearchLedger[curVertex] != id {
 				exploredSearchLedger[curVertex] = id
-
-				// Check if the current vertex conflicts with stack or NewElements
-				_, ok := stack[curVertex]
+				_, ok := Stack[curVertex]
 				if ok {
 					deleteTrue = true
 					break
@@ -43,21 +44,18 @@ func LeaveMaximalElements(NewElements map[int]int, curParent int, stack map[int]
 					}
 				}
 
-				// Traverse to the next vertices in the conflict chain
 				for nextVertex := range ledgerMap[curVertex].ParentsConflicts {
 					if nextVertex != curParent {
 						localStack = append(localStack, nextVertex)
 					}
 				}
+
 			}
 		}
-
-		// Clean up exploredSearchLedger
 		for t := range allVisited {
 			exploredSearchLedger[allVisited[t]] = 0
 		}
 
-		// Delete the vertex if it conflicts with stack or NewElements
 		if deleteTrue {
 			delete(NewElements, id)
 			continue
@@ -68,30 +66,23 @@ func LeaveMaximalElements(NewElements map[int]int, curParent int, stack map[int]
 // GetReality returns a map representing the reality of the ledger.
 func GetReality() map[int]int {
 	reality := map[int]int{}
-	stack := map[int]conflictForSort{}
-	stack[idGenesis] = conflictForSort{weight: ledgerMap[idGenesis].Weight, HashName: hash(strconv.Itoa(idGenesis))}
-
-	// Iterate until the stack is empty
-	for len(stack) > 0 {
+	Stack := map[int]conflictForSort{}
+	Stack[idGenesis] = conflictForSort{weight: ledgerMap[idGenesis].Weight, HashName: hash(strconv.Itoa(idGenesis))}
+	for len(Stack) > 0 {
 		maxWeight := -1.1
 		maxWeightIds := map[int]conflictForSort{}
-
-		// Find the maximum weight and the corresponding IDs in the stack
-		for curID := range stack {
-			if maxWeight+0.00001 < stack[curID].weight {
-				maxWeight = stack[curID].weight
+		for curID := range Stack {
+			if maxWeight+0.00001 < Stack[curID].weight {
+				maxWeight = Stack[curID].weight
 				maxWeightIds = map[int]conflictForSort{}
-				maxWeightIds[curID] = stack[curID]
+				maxWeightIds[curID] = Stack[curID]
 			}
-			if 0.00001 > Abs(stack[curID].weight-maxWeight) {
-				maxWeightIds[curID] = stack[curID]
+			if 0.00001 > Abs(Stack[curID].weight-maxWeight) {
+				maxWeightIds[curID] = Stack[curID]
 			}
 		}
-
 		var maxHash string
 		var winner int
-
-		// Find the winner based on the maximum weight and hash value
 		for winner = range maxWeightIds {
 			maxHash = maxWeightIds[winner].HashName
 			break
@@ -109,12 +100,10 @@ func GetReality() map[int]int {
 				NewElements[nextVertex] = 1
 			}
 		}
-
-		// Update the weight and add the winner to the reality map
 		ledgerMap[winner].Weight = ledgerMap[winner].Weight + 1
 		reality[winner] = 1
-
-		// Remove transactions conflicting with the winner from stack and assign weights
+		delete(Stack, winner)
+		// Remove transactions conflicting with winner from Stack and assign weights
 		allVisited := make([]int, 0)
 		localStack := make([]int, 0)
 		for nextVertex := range ledgerMap[winner].DirectConflicts {
@@ -124,34 +113,25 @@ func GetReality() map[int]int {
 			curVertex := localStack[len(localStack)-1]
 			allVisited = append(allVisited, curVertex)
 			localStack = localStack[:len(localStack)-1]
-
-			// Check if the current vertex is explored and update its weight
 			if exploredSearchLedger[curVertex] != winner && ledgerMap[curVertex].Weight > -0.5 {
 				exploredSearchLedger[curVertex] = winner
 				ledgerMap[curVertex].Weight = -1.0
-				delete(stack, curVertex)
-
-				// Traverse to the next vertices in the conflict chain
+				delete(Stack, curVertex)
 				for nextVertex := range ledgerMap[curVertex].ChildrenConflicts {
 					localStack = append(localStack, nextVertex)
 				}
 			}
 		}
 
-		// Clean up exploredSearchLedger
 		for t := range allVisited {
 			exploredSearchLedger[allVisited[t]] = 0
 		}
-
 		// Leave only maximal elements from NewElements
-		LeaveMaximalElements(NewElements, winner, stack)
-
-		// Update stack with the remaining conflict vertices
+		LeaveMaximalElements(NewElements, winner, Stack)
 		for nextVertex := range NewElements {
-			stack[nextVertex] = conflictForSort{weight: ledgerMap[nextVertex].Weight, HashName: hash(strconv.Itoa(nextVertex))}
+			Stack[nextVertex] = conflictForSort{weight: ledgerMap[nextVertex].Weight, HashName: hash(strconv.Itoa(nextVertex))}
 		}
 	}
-
 	return reality
 }
 

@@ -4,119 +4,115 @@ import (
 	"os"
 	"sort"
 	"strconv"
+	"time"
 
 	"github.com/dominikbraun/graph"
 	"github.com/dominikbraun/graph/draw"
 	"golang.org/x/exp/maps"
 )
 
-// DrawDAG generates a Directed Acyclic Graph (DAG) visualization in Graphviz DOT format.
-// It takes the following parameters:
-// - filename: The name of the output file without the extension.
-// - transactions: A map of transaction IDs to Transaction objects.
-// - outputConsumers: A map that contains UTXO and a map of all transaction IDs consuming this UTXO.
-// - threshold: A threshold value used for determining the color of vertices in the graph.
-// - genesisID: The ID of the genesis transaction.
-func DrawDAG(filename string, transactions map[int]*Transaction, outputConsumers map[string]map[int]int, threshold float64, genesisID int) {
+// AllParameters represents a collection of parameters used for a specific calculation.
+type AllParameters struct {
+	timestamp       float64 // The timestamp of the calculation
+	numConflicts    int     // The number of conflicts encountered
+	numTransactions int     // The total number of transactions processed
+}
+
+// DrawDAG function generates a Directed Acyclic Graph (DAG) visualization.
+func DrawDAG(filename string) {
+	// Create a new directed graph
 	g := graph.New(graph.IntHash, graph.Directed())
 
+	// Keep track of all visited vertices
 	allVisited := make([]int, 0)
 
-	// Create exploredSearchLedger of size len(transactions)
-	exploredSearchLedger := make(map[int]int, len(transactions))
+	// Stack for Depth First Search, initialized with genesis ID
+	dfsStack := []int{idGenesis}
 
-	// Missing: Traverse down till conflicts and mark the past conflicts BFS
+	// Dictionary to keep track of visited nodes during this DFS
+	exploredSearchLedger := make(map[int]int, len(ledgerMap))
 
-	// Initialize the stack with the genesis ID
-	stack := make([]int, 0)
-	stack = append(stack, genesisID)
-
-	strGenesisID := "TX: " + strconv.Itoa(genesisID)
-	if transactions[genesisID].IsConflict {
-		_ = g.AddVertex(genesisID, graph.VertexAttribute("shape", "polygon"), graph.VertexAttribute("label", strGenesisID), graph.VertexAttribute("color", "blue"))
+	// Add the genesis transaction to the graph
+	genesisIDStr := "TX: " + strconv.Itoa(idGenesis)
+	if ledgerMap[idGenesis].IsConflict {
+		_ = g.AddVertex(idGenesis, graph.VertexAttribute("shape", "polygon"), graph.VertexAttribute("label", genesisIDStr), graph.VertexAttribute("color", "blue"))
 	}
 
-	// Perform a depth-first search to traverse the DAG
-	for len(stack) > 0 {
-		// Pop the top vertex from the stack
-		curVertex := stack[len(stack)-1]
-		allVisited = append(allVisited, curVertex)
-		stack = stack[:len(stack)-1]
+	// Perform DFS
+	for len(dfsStack) > 0 {
+		// Pop the last transaction ID from the DFS stack
+		currentVertex := dfsStack[len(dfsStack)-1]
+		dfsStack = dfsStack[:len(dfsStack)-1]
 
-		// Check if the current vertex has already been explored in this traversal
-		if exploredSearchLedger[curVertex] != genesisID {
-			exploredSearchLedger[curVertex] = genesisID
+		allVisited = append(allVisited, currentVertex)
 
-			// Collect the output labels of the current transaction and sort them
-			keys := make([]string, 0)
-			for k := range transactions[curVertex].OutputLabels {
-				keys = append(keys, k)
+		// If the current vertex has not been explored in this DFS, explore it
+		if exploredSearchLedger[currentVertex] != idGenesis {
+			exploredSearchLedger[currentVertex] = idGenesis
+
+			// Get the output labels for currentVertex and sort them
+			outputLabels := make([]string, 0)
+			for outputLabel := range ledgerMap[currentVertex].OutputLabels {
+				outputLabels = append(outputLabels, outputLabel)
 			}
-			sort.Strings(keys)
+			sort.Strings(outputLabels)
 
-			// Iterate over the output labels
-			for _, out := range keys {
-				// Check if the output has any consumers
-				if len(outputConsumers[out]) >= 1 {
-					curNodeInt := 0
-					curFactor := 1
-
-					// Calculate the unique ID for the output node
-					for p := 1; p < len(out); p++ {
-						curByte := int(out[p])
-						curNodeInt = curNodeInt + curFactor*curByte
-						curFactor = curFactor * 256
+			// Iterate over output labels
+			for _, output := range outputLabels {
+				if len(outputLabelsMapConsumerIDs[output]) >= 1 {
+					// Compute a unique ID for the output node
+					outputNodeID := 0
+					factor := 1
+					for i := 1; i < len(output); i++ {
+						outputNodeID += factor * int(output[i])
+						factor *= 256
 					}
 
 					// Add the output node and edge to the graph
-					_ = g.AddVertex(curNodeInt, graph.VertexAttribute("label", out[0:5]))
-					_ = g.AddEdge(curVertex, curNodeInt)
+					_ = g.AddVertex(outputNodeID, graph.VertexAttribute("label", output[0:5]))
+					_ = g.AddEdge(currentVertex, outputNodeID)
 
+					// Get sorted consumer IDs for this output label
 					consumerIDs := make([]int, 0)
-					for k2 := range outputConsumers[out] {
-						consumerIDs = append(consumerIDs, k2)
+					for consumerID := range outputLabelsMapConsumerIDs[output] {
+						consumerIDs = append(consumerIDs, consumerID)
 					}
 					sort.Ints(consumerIDs)
 
 					// Iterate over the consumer IDs
-					for _, consumer := range consumerIDs {
-						strConsumer := "TX: " + strconv.Itoa(consumer)
-
-						// Add the consumer node based on conflict and weight conditions
-						if transactions[consumer].IsConflict {
-							_ = g.AddVertex(consumer, graph.VertexAttribute("shape", "polygon"), graph.VertexAttribute("label", strConsumer), graph.VertexAttribute("color",
-
-								"red"))
+					for _, consumerID := range consumerIDs {
+						// Add the consumer node and edge to the graph
+						consumerIDStr := "TX: " + strconv.Itoa(consumerID)
+						if ledgerMap[consumerID].Weight > threshold {
+							_ = g.AddVertex(consumerID, graph.VertexAttribute("shape", "polygon"), graph.VertexAttribute("label", consumerIDStr), graph.VertexAttribute("color", "blue"))
 						} else {
-							if transactions[consumer].Weight > threshold {
-								_ = g.AddVertex(consumer, graph.VertexAttribute("shape", "polygon"), graph.VertexAttribute("label", strConsumer), graph.VertexAttribute("color", "blue"))
+							if ledgerMap[consumerID].IsConflict {
+								_ = g.AddVertex(consumerID, graph.VertexAttribute("shape", "polygon"), graph.VertexAttribute("label", consumerIDStr), graph.VertexAttribute("color", "red"))
 							} else {
-								_ = g.AddVertex(consumer, graph.VertexAttribute("shape", "polygon"), graph.VertexAttribute("label", strConsumer))
+								_ = g.AddVertex(consumerID, graph.VertexAttribute("shape", "polygon"), graph.VertexAttribute("label", consumerIDStr))
 							}
 						}
 
-						// Add the edge from the output node to the consumer node
-						_ = g.AddEdge(curNodeInt, consumer)
+						_ = g.AddEdge(outputNodeID, consumerID)
 					}
 				}
 			}
 
-			childIDs := make([]int, 0)
-			for k := range transactions[curVertex].Children {
-				childIDs = append(childIDs, k)
+			// Get sorted child IDs of currentVertex
+			childrenIDs := make([]int, 0)
+			for childID := range ledgerMap[currentVertex].Children {
+				childrenIDs = append(childrenIDs, childID)
 			}
-			sort.Ints(childIDs)
+			sort.Ints(childrenIDs)
 
-			// Push the child vertices to the stack for further traversal
-			for _, nextVertex := range childIDs {
-				stack = append(stack, nextVertex)
-			}
+			// Push the children of the current vertex to the stack for further traversal
+			dfsStack = append(dfsStack, childrenIDs...)
 		}
 	}
 
-	// Clean exploredSearchLedger here
-	for t := range allVisited {
-		exploredSearchLedger[allVisited[t]] = 0
+	// Reset the exploredSearchLedger
+	for _, vertex := range allVisited {
+		exploredSearchLedger[vertex] = 0
 	}
 
 	// Create the output file and write the graph in DOT format
@@ -177,4 +173,10 @@ func CleaningStructures() {
 	//exploredNestedSearchLedger = nil
 	maps.Clear(confirmedTransactions) // map containing all confirmed Transactions
 	numConflicts = 0
+}
+
+func Analytics(curTimestamp time.Duration) {
+	curNumTransactions := len(ledgerMap)
+	curNumConflicts := numConflicts
+	allAnalytics = append(allAnalytics, AllParameters{numConflicts: curNumConflicts, numTransactions: curNumTransactions, timestamp: curTimestamp.Seconds()})
 }

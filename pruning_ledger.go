@@ -1,6 +1,6 @@
 package main
 
-func DeleteRejectedTransactions(ledgerMap map[int]*Transaction, outputLabelsMapConsumerIDs map[string]map[int]int, threshold float64, idGenesis int) {
+func DeleteRejectedTransactions() {
 	allVisited := make([]int, 0)
 	//Traverse up and mark all directly conflicting txs
 	Stack := make([]int, 0)

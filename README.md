@@ -79,12 +79,16 @@ This test follows the process:
 
 **Example:**
 At the first step, we construct a ledger consisting of `16` transactions. Rectangles correspond to transactions, whereas ovals are the outputs of the transactions. Unspent outputs are not shown for simplicity. Recall that two transactions are conflicting or simply conflicts if they spent the same output. We use blue color for the genesis and red color fo highlighting conflicts.
+
 <img src="https://i.imgur.com/w3e8ZLG.png"  width="50%">
 
 
 The following picture demonstrates the ledger after finding the reality.  We use blue color for the genesis and the confirmed conflicting transaction in the reality and red color for conflicts which are not in the constructed reality.
+
 <img src="https://i.imgur.com/1lfSDgR.png"  width="50%">
+
 The result after pruning rejected transactions, that are not consistent with the chosen reality, is depicted in the following picture. All transactions are considered as confirmed and depicted with blue color.
+
 <img src="https://i.imgur.com/Uoe1XRp.png"  width="20%">
 
 ### Prerequisite: Graphviz's `dot` Command-Line Tool

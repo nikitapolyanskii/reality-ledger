@@ -10,18 +10,23 @@ import (
 )
 
 func GetLedgerLimitConflictTime() {
-	probabilityConflict := 0.05
-	numTransactionsStart := 40000000
+	probabilityConflict := 0.01
+	numTransactions := 400000
 	upBoundConflicts := 5000
-
-	GrowingLedgerPruningConflictsLimit(probabilityConflict, numTransactionsStart, upBoundConflicts)
+	fmt.Println("**************************************")
+	fmt.Println("Parameter of testing getLedgerLimitConflict:")
+	fmt.Println("numTransactions = ", numTransactions)
+	fmt.Println("upBoundConflicts = ", upBoundConflicts)
+	fmt.Println("probabilityConflict = ", probabilityConflict)
+	fmt.Println("**************************************")
+	GrowingLedgerPruningConflictsLimit(probabilityConflict, numTransactions, upBoundConflicts)
 	CleaningStructures()
 }
 
-func GrowingLedgerPruningConflictsLimit(probabilityConflict float64, numTransactionsStart int, upBoundConflicts int) {
+func GrowingLedgerPruningConflictsLimit(probabilityConflict float64, numTransactions int, upBoundConflicts int) {
 	numConfirmedTransactions := 0
-	exploredSearchLedger = make([]int, numTransactionsStart+1)
-	exploredNestedSearchLedger = make([]int, numTransactionsStart+1)
+	exploredSearchLedger = make([]int, numTransactions+1)
+	exploredNestedSearchLedger = make([]int, numTransactions+1)
 	// Initialization of data structures
 	for i := 0; i < len(exploredSearchLedger); i++ {
 		exploredSearchLedger[i] = 0
@@ -54,8 +59,8 @@ func GrowingLedgerPruningConflictsLimit(probabilityConflict float64, numTransact
 	ledgerMap[idGenesis] = &genesis
 	createLedgerStopwatch.Pause()
 	Analytics(createLedgerStopwatch.Elapsed())
-	// Create numTransactionsStart random transactions
-	for idTransaction := idGenesis + 1; idTransaction <= numTransactionsStart; idTransaction++ {
+	// Create numTransactions random transactions
+	for idTransaction := idGenesis + 1; idTransaction <= numTransactions; idTransaction++ {
 		// Measure parameters
 		if createLedgerStopwatch.Elapsed() > time.Duration(numAnalytics)*measureEverySec {
 			numAnalytics = int(createLedgerStopwatch.Elapsed()/measureEverySec) + 1

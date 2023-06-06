@@ -10,12 +10,17 @@ import (
 )
 
 func GetRealityTime() {
-	numGetReality := 1000
+	numGetReality := 10
 
 	upBoundConflicts := []int{10000, 20000, 40000}
 	probabilityConflict := 0.1
-	numTransactionsStart := 500000
+	numTransactionsStart := 5000000
 	globalSeed = 0
+	fmt.Println("**************************************")
+	fmt.Println("Parameter of testing getReality:")
+	fmt.Println("upBoundConflicts = ", upBoundConflicts)
+	fmt.Println("probabilityConflict = ", probabilityConflict)
+	fmt.Println("**************************************")
 	file, _ := os.Create("getRealityTime.txt")
 	fmt.Fprintln(file, len(upBoundConflicts))
 	getRealityStopwatch := stopwatch.New()

@@ -1,11 +1,91 @@
-# Reality-based UTXO ledger
-A repository for building a reality-based ledger using the UTXO (Unspent Transaction Output) model.
+# Reality-based UTXO Ledger
 
+This repository is dedicated to building a reality-based ledger using the Unspent Transaction Output (UTXO) model. This initiative is supported by the paper [Reality-based UTXO ledger](https://arxiv.org/abs/2205.01345), which can be found in the repository named `Reality_based_UTXO_ledger.pdf`.
 
+We have set up four tests to explore various functionalities of the reality-based UTXO ledger.
+
+## Table of Contents
+
+- [Reality-based UTXO Ledger](#reality-based-utxo-ledger)
+  - [Table of Contents](#table-of-contents)
+  - [Construct Ledger (Test)](#construct-ledger-test)
+  - [Compute Reality (Test)](#compute-reality-test)
+  - [Generate Ledger, Find Reality, Confirm and Prune Transactions (Test)](#generate-ledger-find-reality-confirm-and-prune-transactions-test)
+  - [Draw Ledger (Test)](#draw-ledger-test)
+    - [Prerequisite: Graphviz's `dot` Command-Line Tool](#prerequisite-graphvizs-dot-command-line-tool)
+      - [Installation Instructions](#installation-instructions)
+    - [Using `dot` to Convert DOT Files to SVG](#using-dot-to-convert-dot-files-to-svg)
+---
+
+## Construct Ledger (Test)
+
+You can compute the time needed to construct a reality-based ledger based on a stream of generated transactions by running the test `go test -run TestTimeLedgerGrow`.
+
+The procedure followed by this test involves:
+
+1. Generating a stream of transactions until the ledger hits a pre-defined number of transactions (`numTransactions := 2000000`). The conflicts are generated with `probabilityConflict := []float64{0.05, 0.05, 0.1, 0.5}`. 
+
+2. Measuring the time for all operations involved in this process, except creating random transactions. The resulting timestamps, number of conflicts, and transactions are recorded in `ledgerGrow.txt`.
+
+> **Note:** Creating random transactions, particularly checking property 4 of Assumption 4.1 in [Reality-based UTXO ledger](https://arxiv.org/abs/2205.01345), takes up most of the test execution time.
 
 ---
-## Draw a randomly constructed ledger
-Use `test_draw.go` for constructing a random ledger and creating  (`.gv`) file. Using Graphviz's `dot` Command-Line Tool one can draw the obtained ledger in (`.svg`) file.
+
+## Compute Reality (Test)
+
+By running the test `go test -run TestTimeComputeReality`, you can compute the time needed to find the reality from the set of conflicts. 
+
+This test essentially follows the steps:
+
+1. Constructs a reality-based ledger with `probabilityConflict=0.1` until the ledger reaches a certain number of conflicts (`upBoundConflicts := []int{10000, 20000, 40000}`). Testing is carried out `numGetReality=10` times for each number of conflicts.
+
+2. For the constructed set of random conflicts, the reality is computed and the time taken is measured.
+
+3. The time for constructing the reality and its size are then recorded in `getRealityTime.txt`.
+
+> **Note:** Creating a random ledger with the required number of conflicts, especially checking property 4 of Assumption 4.1 in [Reality-based UTXO ledger](https://arxiv.org/abs/2205.01345), consumes most of the test execution time.
+
+---
+
+## Generate Ledger, Find Reality, Confirm and Prune Transactions (Test)
+
+By running `go test -run TestTimeConfirmedTransactionLimitConflict`, you can generate a stream of transactions, which are confirmed or pruned once the number of conflicts exceeds a certain threshold.
+
+The steps in this test include:
+
+1. Generating a stream of transactions with `probabilityConflict=0.01` until the ledger reaches a certain number of conflicts (`upBoundConflicts := 5000`).  
+
+2. Computing the reality for the constructed set of random conflicts,
+
+ finding transactions consistent with the reality (considered confirmed), and pruning the remaining transactions. The unspent outputs of the confirmed transactions are used as outputs of a new genesis. This process repeats from step 1 until a total number of `numTransactions := 400000` transactions is generated.
+
+3. Measuring the time for all operations in this process, except for creating transactions. The timestamps, the number of conflicts in RAM, transactions in RAM, and confirmed transactions for those timestamps are recorded in `ledgerGrowAndPrune.txt`.  
+
+> **Note:** Most of the test execution time goes into creating random transactions, particularly in checking property 4 of Assumption 4.1 in [Reality-based UTXO ledger](https://arxiv.org/abs/2205.01345).
+
+---
+
+## Draw Ledger (Test)
+
+You can generate a stream of `numTransactions := 16` transactions with `probabilityConflict := 0.4` by running `go test -run TestDrawLedger`.
+
+This test follows the process:
+
+1. Creates a `ledger_start.gv` file once these transactions are generated.
+2. Computes the reality, finds confirmed conflicting transactions, and writes the ledger in `ledger_after_reality.gv`.
+3. Prunes the rejected transactions from the ledger and creates the file `ledger_after_pruning.gv`.
+4*. Please convert the `gv` files to `svg` files using the command `dot -Tsvg -O ledger_start.gv ledger_after_reality.gv ledger_after_pruning.gv` to see the evolution of the ledger after applying certain operations.
+
+
+**Example:**
+At the first step, we construct a ledger consisting of `16` transactions. Rectangles correspond to transactions, whereas ovals are the outputs of the transactions. Unspent outputs are not shown for simplicity. Recall that two transactions are conflicting or simply conflicts if they spent the same output. We use blue color for the genesis and red color fo highlighting conflicts.
+<img src="https://i.imgur.com/w3e8ZLG.png"  width="50%">
+
+
+The following picture demonstrates the ledger after finding the reality.  We use blue color for the genesis and the confirmed conflicting transaction in the reality and red color for conflicts which are not in the constructed reality.
+<img src="https://i.imgur.com/1lfSDgR.png"  width="50%">
+The result after pruning rejected transactions, that are not consistent with the chosen reality, is depicted in the following picture. All transactions are considered as confirmed and depicted with blue color.
+<img src="https://i.imgur.com/Uoe1XRp.png"  width="20%">
 
 ### Prerequisite: Graphviz's `dot` Command-Line Tool
 

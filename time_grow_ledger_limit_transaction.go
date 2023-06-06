@@ -11,8 +11,14 @@ import (
 
 func GetLedgerLimitTransactionTime() {
 	probabilityConflict := []float64{0.05, 0.05, 0.1, 0.5}
-	numTransactionsStart := 2000000
+	numTransactions := 200000
 	computeBranch := []bool{false, true}
+	fmt.Println("**************************************")
+	fmt.Println("Parameter of testing GetLedgerLimitTransactionTime:")
+	fmt.Println("numTransactions = ", numTransactions)
+	fmt.Println("computeBranch = ", computeBranch)
+	fmt.Println("probabilityConflict = ", probabilityConflict)
+	fmt.Println("**************************************")
 	// Test 1: ever growing ledger
 	file, _ := os.Create("ledgerGrow.txt")
 	fmt.Fprintln(file, len(probabilityConflict))
@@ -20,7 +26,7 @@ func GetLedgerLimitTransactionTime() {
 
 	for i := range probabilityConflict {
 		for j := range computeBranch {
-			GrowingLedgerLimit(probabilityConflict[i], numTransactionsStart, computeBranch[j])
+			GrowingLedgerLimit(probabilityConflict[i], numTransactions, computeBranch[j])
 			//reality := GetReality()
 			//reality[0] = 4
 			fmt.Fprintln(file, probabilityConflict[i], "\t", computeBranch[j], "\t", len(allAnalytics))

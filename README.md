@@ -59,7 +59,7 @@ By running the test `go test -run TestTimeComputeReality`, you can compute the t
 
 This test essentially follows the steps:
 
-1. Constructs a reality-based ledger with `probabilityConflict=0.1` until the ledger reaches a certain number of conflicts (`upBoundConflicts := []int{10000, 20000, 40000}`). Testing is carried out `numGetReality=10` times for each number of conflicts.
+1. Constructs a reality-based ledger with `probabilityConflict=0.1` until the ledger reaches a certain number of conflicts (`upBoundConflicts := []int{10000, 20000, 40000}`). Testing is carried out `numGetReality=100` times for each number of conflicts.
 
 2. For the constructed set of random conflicts, the reality is computed and the time taken is measured.
 
@@ -68,7 +68,7 @@ This test essentially follows the steps:
 4. The data contained in `getRealityTime.txt` can be used with `visualisation.R` to create a graphics: <img src="TimeToCompute.png"  width="100%">
 <img src="SizeOfReality.png"  width="100%">
 
-> **Note:** Creating a random ledger with the required number of conflicts, especially checking property 4 of Assumption 4.1 in [Reality-based UTXO ledger](https://arxiv.org/abs/2205.01345), consumes most of the test execution time. For more detailed and accurate plots, we recommend setting the parameter `numGetReality` larger than `100`. However, this might lead to a longer execution time.
+> **Note:** Creating a random ledger with the required number of conflicts, especially checking property 4 of Assumption 4.1 in [Reality-based UTXO ledger](https://arxiv.org/abs/2205.01345), consumes most of the test execution time. For more detailed and accurate plots, we recommend setting the parameter `numGetReality` larger than `1000`. However, this might lead to a longer execution time.
 
 ---
 
@@ -82,7 +82,7 @@ The steps in this test include:
 
 2. Computing the reality for the constructed set of random conflicts,
 
- finding transactions consistent with the reality (considered confirmed), and pruning the remaining transactions. The unspent outputs of the confirmed transactions are used as outputs of a new genesis. This process repeats from step 1 until a total number of `numTransactions := 400000` transactions is generated.
+ finding transactions consistent with the reality (considered confirmed), and pruning the remaining transactions. The unspent outputs of the confirmed transactions are used as outputs of a new genesis. This process repeats from step 1 until a total number of `numTransactions := 4000000` transactions is generated.
 
 3. Measuring the time for all operations in this process, except for creating transactions. The timestamps, the number of conflicts in RAM, transactions in RAM, and confirmed transactions for those timestamps are recorded in `ledgerGrowAndPrune.txt`.  
 

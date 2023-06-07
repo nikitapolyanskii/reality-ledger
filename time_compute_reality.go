@@ -10,7 +10,7 @@ import (
 )
 
 func GetRealityTime() {
-	numGetReality := 10
+	numGetReality := 100
 
 	upBoundConflicts := []int{10000, 20000, 40000}
 	probabilityConflict := 0.1

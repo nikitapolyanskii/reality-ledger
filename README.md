@@ -27,6 +27,8 @@ The procedure followed by this test involves:
 
 2. Measuring the time for all operations involved in this process, except creating random transactions. The resulting timestamps, number of conflicts, and transactions are recorded in `ledgerGrow.txt`.
 
+3. The data contained in `ledgerGrow.txt` can be used with `visualisation.R` to create a graphic: <img src="TimeToHandleTransactions.png"  width="100%">
+
 > **Note:** Creating random transactions, particularly checking property 4 of Assumption 4.1 in [Reality-based UTXO ledger](https://arxiv.org/abs/2205.01345), takes up most of the test execution time.
 
 ---
@@ -42,6 +44,9 @@ This test essentially follows the steps:
 2. For the constructed set of random conflicts, the reality is computed and the time taken is measured.
 
 3. The time for constructing the reality and its size are then recorded in `getRealityTime.txt`.
+
+4. The data contained in `getRealityTime.txt` can be used with `visualisation.R` to create a graphics: <img src="TimeToCompute.png"  width="100%">
+<img src="SizeOfReality.png"  width="100%">
 
 > **Note:** Creating a random ledger with the required number of conflicts, especially checking property 4 of Assumption 4.1 in [Reality-based UTXO ledger](https://arxiv.org/abs/2205.01345), consumes most of the test execution time.
 
@@ -61,9 +66,14 @@ The steps in this test include:
 
 3. Measuring the time for all operations in this process, except for creating transactions. The timestamps, the number of conflicts in RAM, transactions in RAM, and confirmed transactions for those timestamps are recorded in `ledgerGrowAndPrune.txt`.  
 
+4.  The data contained in `ledgerGrowAndPrune.txt` can be used with `visualisation.R` to create a graphic: <img src="LedgerGrowth.png"  width="100%">
+
 > **Note:** Most of the test execution time goes into creating random transactions, particularly in checking property 4 of Assumption 4.1 in [Reality-based UTXO ledger](https://arxiv.org/abs/2205.01345).
 
 ---
+
+## Visualisation
+The file `visualisation.R` contains a script that loads the into the Stoftware `R` and allows to create visualisations of the data created above.  
 
 ## Draw Ledger (Test)
 

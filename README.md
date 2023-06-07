@@ -1,6 +1,6 @@
 # Reality-based UTXO Ledger
 
-This repository is dedicated to building a reality-based ledger using the Unspent Transaction Output (UTXO) model. This initiative is supported by the paper [Reality-based UTXO ledger](https://arxiv.org/abs/2205.01345), which can be found in the repository named `Reality_based_UTXO_ledger.pdf`.
+This repository is dedicated to building a reality-based ledger using the Unspent Transaction Output (UTXO) model. This initiative is supported by the paper [Reality-based UTXO ledger](https://arxiv.org/abs/2205.01345), which can be found in the repository named `Reality_based_UTXO_ledger.pdf`. See Section 6 `"Numerical Experiments"` for details about experiments.
 
 We have set up four tests to explore various functionalities of the reality-based UTXO ledger.
 
@@ -9,8 +9,12 @@ We have set up four tests to explore various functionalities of the reality-base
 - [Reality-based UTXO Ledger](#reality-based-utxo-ledger)
   - [Table of Contents](#table-of-contents)
   - [Construct Ledger (Test)](#construct-ledger-test)
+    - [Prerequisites: Go 1.20](#prerequisites-go-120)
   - [Compute Reality (Test)](#compute-reality-test)
   - [Generate Ledger, Find Reality, Confirm and Prune Transactions (Test)](#generate-ledger-find-reality-confirm-and-prune-transactions-test)
+  - [Visualisation](#visualisation)
+    - [Prerequisites: Software R](#prerequisites-software-r)
+    - [Running the Program](#running-the-program)
   - [Draw Ledger (Test)](#draw-ledger-test)
     - [Prerequisite: Graphviz's `dot` Command-Line Tool](#prerequisite-graphvizs-dot-command-line-tool)
       - [Installation Instructions](#installation-instructions)
@@ -23,7 +27,7 @@ You can compute the time needed to construct a reality-based ledger based on a s
 
 The procedure followed by this test involves:
 
-1. Generating a stream of transactions until the ledger hits a pre-defined number of transactions (`numTransactions := 2000000`). The conflicts are generated with `probabilityConflict := []float64{0.05, 0.05, 0.1, 0.5}`. 
+1. Generating a stream of transactions until the ledger hits a pre-defined number of transactions (`numTransactions := 2000000`). The conflicts are generated with `probabilityConflict := []float64{0.01, 0.05, 0.1, 0.5}`. 
 
 2. Measuring the time for all operations involved in this process, except creating random transactions. The resulting timestamps, number of conflicts, and transactions are recorded in `ledgerGrow.txt`.
 
@@ -31,6 +35,22 @@ The procedure followed by this test involves:
 
 > **Note:** Creating random transactions, particularly checking property 4 of Assumption 4.1 in [Reality-based UTXO ledger](https://arxiv.org/abs/2205.01345), takes up most of the test execution time.
 
+### Prerequisites: Go 1.20
+To run this program, you will need to have Go (version 1.20 or higher) installed on your machine. You can download the latest version of Go from the official [Go Downloads page](https://golang.org/dl/).
+
+You also need to have the following libraries installed:
+
+- github.com/dominikbraun/graph v0.22.0
+- github.com/woodywood117/stopwatch v0.1.1
+- golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
+
+To install these libraries, use the `go get` command:
+
+```bash
+go get github.com/dominikbraun/graph@v0.22.0
+go get github.com/woodywood117/stopwatch@v0.1.1
+go get golang.org/x/exp@v0.0.0-20230522175609-2e198f4a06a1
+```
 ---
 
 ## Compute Reality (Test)
@@ -48,7 +68,7 @@ This test essentially follows the steps:
 4. The data contained in `getRealityTime.txt` can be used with `visualisation.R` to create a graphics: <img src="TimeToCompute.png"  width="100%">
 <img src="SizeOfReality.png"  width="100%">
 
-> **Note:** Creating a random ledger with the required number of conflicts, especially checking property 4 of Assumption 4.1 in [Reality-based UTXO ledger](https://arxiv.org/abs/2205.01345), consumes most of the test execution time.
+> **Note:** Creating a random ledger with the required number of conflicts, especially checking property 4 of Assumption 4.1 in [Reality-based UTXO ledger](https://arxiv.org/abs/2205.01345), consumes most of the test execution time. For more detailed and accurate plots, we recommend setting the parameter `numGetReality` larger than `100`. However, this might lead to a longer execution time.
 
 ---
 
@@ -73,7 +93,45 @@ The steps in this test include:
 ---
 
 ## Visualisation
-The file `visualisation.R` contains a script that loads the into the Stoftware `R` and allows to create visualisations of the data created above.  
+The file `visualisation.R` is designed to visualize the data from the `getRealityTime.txt`, `ledgerGrow.txt`, and `ledgerGrowAndPrune.txt` files.
+
+### Prerequisites: Software R
+To run this program, you will need to have R installed on your machine along with the following libraries:
+
+- ggplot2
+- dplyr
+- tidyr
+- reshape2
+
+You can install the required libraries in R using the following commands:
+
+```R
+install.packages("ggplot2")
+install.packages("dplyr")
+install.packages("tidyr")
+install.packages("reshape2")
+```
+
+You also need to have the following data files in the same directory as the R program:
+
+- getRealityTime.txt
+- ledgerGrow.txt
+- ledgerGrowAndPrune.txt
+
+### Running the Program
+1. Open RStudio or your preferred R environment.
+2. Set your working directory to where your R script is located using `setwd("path/to/your/script")`.
+3. Load the script using the `source("your_script_name.R")` command.
+
+The program will create the following files:
+
+- TimeToCompute.png
+- SizeOfReality.png
+- TimeToHandleTransactions.png
+- LedgerGrowth.png
+
+These PNG files contain graphs for visualizing the data from the input text files.
+
 
 ## Draw Ledger (Test)
 
@@ -90,16 +148,21 @@ This test follows the process:
 **Example:**
 At the first step, we construct a ledger consisting of `16` transactions. Rectangles correspond to transactions, whereas ovals are the outputs of the transactions. Unspent outputs are not shown for simplicity. Recall that two transactions are conflicting or simply conflicts if they spent the same output. We use blue color for the genesis and red color fo highlighting conflicts.
 
-<img src="https://i.imgur.com/w3e8ZLG.png"  width="50%">
-
+<p align="center">
+<img src="https://i.imgur.com/w3e8ZLG.png"  width="60%">
+</p>
 
 The following picture demonstrates the ledger after finding the reality.  We use blue color for the genesis and the confirmed conflicting transaction in the reality and red color for conflicts which are not in the constructed reality.
 
-<img src="https://i.imgur.com/1lfSDgR.png"  width="50%">
+<p align="center">
+<img src="https://i.imgur.com/1lfSDgR.png"  width="60%">
+</p>
 
 The result after pruning rejected transactions, that are not consistent with the chosen reality, is depicted in the following picture. All transactions are considered as confirmed and depicted with blue color.
 
-<img src="https://i.imgur.com/Uoe1XRp.png"  width="20%">
+<p align="center">
+<img src="https://i.imgur.com/Uoe1XRp.png"  width="30%">
+</p>
 
 ### Prerequisite: Graphviz's `dot` Command-Line Tool
 

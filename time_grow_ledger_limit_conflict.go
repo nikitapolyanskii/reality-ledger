@@ -11,7 +11,7 @@ import (
 
 func GetLedgerLimitConflictTime() {
 	probabilityConflict := 0.01
-	numTransactions := 400000
+	numTransactions := 4000000
 	upBoundConflicts := 5000
 	fmt.Println("**************************************")
 	fmt.Println("Parameter of testing getLedgerLimitConflict:")

@@ -10,8 +10,8 @@ import (
 )
 
 func GetLedgerLimitTransactionTime() {
-	probabilityConflict := []float64{0.05, 0.05, 0.1, 0.5}
-	numTransactions := 200000
+	probabilityConflict := []float64{0.01, 0.05, 0.1, 0.5}
+	numTransactions := 2000000
 	computeBranch := []bool{false, true}
 	fmt.Println("**************************************")
 	fmt.Println("Parameter of testing GetLedgerLimitTransactionTime:")
